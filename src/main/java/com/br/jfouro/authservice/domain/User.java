@@ -9,35 +9,32 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-@Table(name = "users")
-@Entity(name = "users")
-@Getter
-@Setter
+@Entity
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String login;
-
     private String password;
+    private String email;
 
-    private UserRole role;
-
-    public User(String login, String password, UserRole role) {
+    public User(String login, String password, String email, UserRole role) {
         this.login = login;
         this.password = password;
+        this.email = email;
         this.role = role;
     }
 
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (this.role == UserRole.ADMIN)
-            return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"));
-        else return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -46,23 +43,25 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
+    public String getPassword() {
+        return password;
     }
 
     @Override
     public boolean isEnabled() {
         return true;
     }
-}
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
+}

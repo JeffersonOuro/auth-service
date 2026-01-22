@@ -7,7 +7,6 @@ import com.br.jfouro.authservice.domain.User;
 import com.br.jfouro.authservice.service.AuthService;
 import com.br.jfouro.authservice.service.TokenService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,32 +15,40 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.function.Function;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private  AuthenticationManager authenticationManager;
+    private final AuthService authService;
+    private  TokenService tokenService;
 
-    @Autowired
-    private AuthService authService;
+    public AuthController(AuthenticationManager authenticationManager,
+                          AuthService authService,
+                          TokenService tokenService) {
+        this.authenticationManager = authenticationManager;
+        this.authService = authService;
+        this.tokenService = tokenService;
+    }
 
-    @Autowired
-    private TokenService tokenService;
+    private final Function<LoginRequestDTO, String> gerarToken = dto -> {
+        var auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(dto.login(), dto.password())
+        );
+        return tokenService.generateToken((User) auth.getPrincipal());
+    };
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
-
-        var token = tokenService.generateToken((User) auth.getPrincipal());
-
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO data) {
+        var token = gerarToken.apply(data);
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RegisterRequestDTO data) {
-        this.authService.register(data);
+    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequestDTO data) {
+        authService.register(data);
         return ResponseEntity.ok().build();
     }
 

@@ -2,33 +2,39 @@ package com.br.jfouro.authservice.service;
 
 import com.br.jfouro.authservice.api.dto.RegisterRequestDTO;
 import com.br.jfouro.authservice.domain.User;
+import com.br.jfouro.authservice.domain.UserRole;
 import com.br.jfouro.authservice.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+import java.util.function.Function;
+
 @Service
-public class AuthService implements UserDetailsService {
+public class AuthService {
 
-    @Autowired
-    UserRepository repository;
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return repository.findByLogin(username);
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Function<RegisterRequestDTO, User> dtoToUser;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+
+        this.dtoToUser = dto -> new User(
+                dto.login(),
+                this.passwordEncoder.encode(dto.password()),
+                dto.email(),
+                Optional.<UserRole>ofNullable(dto.role()).orElse(UserRole.USER)
+        );
     }
 
-    public void register(RegisterRequestDTO data) {
-        if (this.repository.findByLogin(data.login()) != null) {
-            throw new RuntimeException("Usuário já existe");
-        }
-
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User newUser = new User(data.login(), encryptedPassword, data.role());
-
-        this.repository.save(newUser);
+    public User register(RegisterRequestDTO data) {
+        return Optional.ofNullable(data)
+                .map(dtoToUser)
+                .map(userRepository::save)
+                .orElseThrow(() -> new IllegalArgumentException("Dados inválidos para registro"));
     }
+
 }
