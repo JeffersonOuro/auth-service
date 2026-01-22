@@ -1,5 +1,8 @@
 # auth-service
+# Autor Jefferson ouro
+
 Serviços de autenticação de usuário
+
 - Registro (POST /auth/register)
 - O cliente envia os dados.
 - AuthController chama AuthService.
