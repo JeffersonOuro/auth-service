@@ -1,5 +1,7 @@
 package com.br.jfouro.authservice.api.controller;
 
+import com.br.jfouro.authservice.AuthResponse;
+import com.br.jfouro.authservice.JwtService;
 import com.br.jfouro.authservice.api.dto.LoginRequestDTO;
 import com.br.jfouro.authservice.api.dto.LoginResponseDTO;
 import com.br.jfouro.authservice.api.dto.RegisterRequestDTO;
@@ -23,13 +25,15 @@ public class AuthController {
 
     private  AuthenticationManager authenticationManager;
     private final AuthService authService;
+    private final JwtService jwtService;
     private  TokenService tokenService;
 
     public AuthController(AuthenticationManager authenticationManager,
-                          AuthService authService,
+                          AuthService authService, JwtService jwtService,
                           TokenService tokenService) {
         this.authenticationManager = authenticationManager;
         this.authService = authService;
+        this.jwtService = jwtService;
         this.tokenService = tokenService;
     }
 
@@ -50,6 +54,11 @@ public class AuthController {
     public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequestDTO data) {
         authService.register(data);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/validate")
+    public AuthResponse validate(@RequestBody String token) {
+        return jwtService.validateToken(token);
     }
 
 }

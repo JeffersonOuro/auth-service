@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Auth Service com Spring Boot e Java 21 rodando em AWS Lambda
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+
+Resources:
+  AuthServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: auth-service
+      Handler: com.br.jfouro.LambdaHandler
+      Runtime: java21
+      CodeUri: target/auth-service-0.0.1-SNAPSHOT-shaded.jar
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: POST
+        AuthApi:
+          Type: Api
+          Properties:
+            Path: /auth
+            Method: POST
+
